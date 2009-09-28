@@ -1,3 +1,8 @@
+//------------------------------------------------------------------------------
+// http://twpol.dyndns.org/projects/vmmap
+// License: Microsoft Public License (Ms-PL).
+//------------------------------------------------------------------------------
+
 #pragma once
 
 struct tstring_caseless_compare_t

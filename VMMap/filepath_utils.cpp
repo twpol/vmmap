@@ -1,3 +1,8 @@
+//------------------------------------------------------------------------------
+// http://twpol.dyndns.org/projects/vmmap
+// License: Microsoft Public License (Ms-PL).
+//------------------------------------------------------------------------------
+
 #include "StdAfx.h"
 #include "filepath_utils.h"
 

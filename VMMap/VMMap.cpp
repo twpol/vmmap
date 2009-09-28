@@ -1,5 +1,9 @@
+//------------------------------------------------------------------------------
+// http://twpol.dyndns.org/projects/vmmap
+// License: Microsoft Public License (Ms-PL).
+//------------------------------------------------------------------------------
+
 // VMMap.cpp : Defines the entry point for the console application.
-//
 
 #include "stdafx.h"
 #include "commandline_options.h"

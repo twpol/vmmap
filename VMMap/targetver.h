@@ -1,3 +1,8 @@
+//------------------------------------------------------------------------------
+// http://twpol.dyndns.org/projects/vmmap
+// License: Microsoft Public License (Ms-PL).
+//------------------------------------------------------------------------------
+
 #pragma once
 
 // The following macros define the minimum required platform.  The minimum required platform

@@ -1,3 +1,8 @@
+//------------------------------------------------------------------------------
+// http://twpol.dyndns.org/projects/vmmap
+// License: Microsoft Public License (Ms-PL).
+//------------------------------------------------------------------------------
+
 // stdafx.cpp : source file that includes just the standard includes
 // VMMap.pch will be the pre-compiled header
 // stdafx.obj will contain the pre-compiled type information
