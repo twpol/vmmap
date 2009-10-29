@@ -260,6 +260,5 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	//Sleep(10000); 
 	return 0;
 }

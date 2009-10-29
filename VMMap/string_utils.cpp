@@ -6,9 +6,12 @@
 #include "StdAfx.h"
 #include "process_memory.h"
 
+// Output formatting for sizes ("#,##0 K").
 std::tstring format_size(unsigned long long size)
 {
-	if (size == 0) return _T("");
+	if (size == 0) {
+		return _T("");
+	}
 	
 	std::tstring text(128, '\0');
 	_ui64tow_s(size / 1024, &*text.begin(), text.size() - 1, 10);
@@ -17,9 +20,12 @@ std::tstring format_size(unsigned long long size)
 	return text;
 }
 
+// Output formatting for numbers ("#,##0").
 std::tstring format_number(unsigned long long size)
 {
-	if (size == 0) return _T("");
+	if (size == 0) {
+		return _T("");
+	}
 	
 	std::tstring text(128, '\0');
 	_ui64tow_s(size, &*text.begin(), text.size() - 1, 10);
@@ -27,6 +33,7 @@ std::tstring format_number(unsigned long long size)
 	return text;
 }
 
+// Output labels for memory data types.
 std::tstring format_process_memory_data_type(int type)
 {
 	if (type == PMDT_BASE)         return _T("Address");
@@ -40,6 +47,7 @@ std::tstring format_process_memory_data_type(int type)
 	return _T("?");
 }
 
+// Output labels for memory block types.
 std::tstring format_process_memory_block_type(int type)
 {
 	if (type == PMBT_FREE)      return _T("Free");
@@ -48,6 +56,7 @@ std::tstring format_process_memory_block_type(int type)
 	return _T("?");
 }
 
+// Output labels for memory group types.
 std::tstring format_process_memory_group_type(int type)
 {
 	if (type == PMGT_TOTAL)       return _T("Total");

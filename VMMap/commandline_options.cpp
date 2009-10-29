@@ -10,62 +10,67 @@
 commandline_options::commandline_options(const std::tstring settings)
 {
 	// API: GetCommandLine: Windows 2000 Pro/Server.
-	const TCHAR* commandline_ptr = GetCommandLine();
-	std::tstring commandline(commandline_ptr, tstrlen(commandline_ptr));
 
+	// Alias -> (Canonical Name, Has Value)
 	std::map<std::tstring, std::pair<std::tstring, bool>, tstring_caseless_compare_t> options;
 	std::tstring optionName(_T(""));
+	std::tstring optionAlias(_T(""));
+	bool inOptionName = true;
 	bool optionHasValue = false;
-	bool optionInName = true;
-	std::tstring optionBuffer(_T(""));
+	// Add the extra comma locally to force the code to process the last item.
 	std::tstring settings_safe(settings);
 	settings_safe += _T(",");
 	for (std::tstring::const_iterator ch = settings_safe.begin(); ch != settings_safe.end(); ch++) {
-		//std::tcout << "CHAR: " << *ch << "  [" << optionName << "][" << optionHasValue << "][" << optionInName << "][" << optionBuffer << "]" << std::endl;
 		switch (*ch) {
 			case ':':
 				optionHasValue = true;
 				break;
 			case ' ':
-				if (optionInName) optionBuffer = optionName;
+				if (inOptionName) {
+					optionAlias = optionName;
+				}
 				{
 					std::pair<std::tstring, bool> data(optionName, optionHasValue);
-					//std::tcout << "SETTING: " << optionBuffer << " -> " << data.first << " (" << data.second << ")" << std::endl;
-					options[optionBuffer] = data;
+					options[optionAlias] = data;
 				}
-				optionInName = false;
-				optionBuffer = _T("");
+				inOptionName = false;
+				optionAlias = _T("");
 				break;
 			case ',':
-				if (optionInName) optionBuffer = optionName;
+				if (inOptionName) {
+					optionAlias = optionName;
+				}
 				{
 					std::pair<std::tstring, bool> data(optionName, optionHasValue);
-					//std::tcout << "SETTING: " << optionBuffer << " -> " << data.first << " (" << data.second << ")" << std::endl;
-					options[optionBuffer] = data;
+					options[optionAlias] = data;
 				}
 				optionName = _T("");
 				optionHasValue = false;
-				optionInName = true;
-				optionBuffer = _T("");
+				inOptionName = true;
+				optionAlias = _T("");
 				break;
 			default:
-				if (optionInName) {
+				if (inOptionName) {
 					optionName += *ch;
 				} else {
-					optionBuffer += *ch;
+					optionAlias += *ch;
 				}
 				break;
 		}
 	}
 
+	// Get the process' command line. We'll do our own parsing of it, thanks.
+	const TCHAR* commandline_ptr = GetCommandLine();
+	std::tstring commandline(commandline_ptr, tstrlen(commandline_ptr));
+
+	// List of whitespace-separated arguments from the command line.
 	std::list<std::tstring> arguments;
-	bool optionInQuotes = false;
-	optionBuffer = _T("");
+	bool inArgumentQuotes = false;
+	optionName = _T("");
 	for (std::tstring::iterator ch = commandline.begin(); ch != commandline.end(); ch++) {
-		//std::tcout << "CHAR: " << *ch << "  [" << optionBuffer << "][" << optionInQuotes << "]" << std::endl;
 		switch (*ch) {
 			case '"':
-				optionInQuotes = !optionInQuotes;
+				inArgumentQuotes = !inArgumentQuotes;
 				break;
 			case '\\': {
 				std::tstring::iterator old_ch = ch;
@@ -76,38 +81,37 @@ commandline_options::commandline_options(const std::tstring settings)
 					if (escape_count % 2 == 0) escape_buffer += '\\';
 				}
 				if ((ch == commandline.end()) || (*ch != '"')) {
-					optionBuffer += commandline.substr(old_ch - commandline.begin(), ch - old_ch + 1);
+					optionName += commandline.substr(old_ch - commandline.begin(), ch - old_ch + 1);
 				} else {
-					optionBuffer += escape_buffer;
-					if (escape_count % 2 == 0) ch--;
-					else optionBuffer += *ch;
+					optionName += escape_buffer;
+					if (escape_count % 2 == 0) {
+						ch--;
+					} else {
+						optionName += *ch;
+					}
 				}
 				break;
 			}
 			case ' ':
 			case '\t':
-				if (!optionInQuotes) {
-					if (optionBuffer.size()) {
-						//std::tcout << "OPTION: " << optionBuffer << std::endl;
-						arguments.push_back(optionBuffer);
-						optionBuffer = _T("");
+				if (!inArgumentQuotes) {
+					if (optionName.size()) {
+						arguments.push_back(optionName);
+						optionName = _T("");
 					}
 					break;
 				}
 			default:
-				optionBuffer += *ch;
+				optionName += *ch;
 				break;
 		}
 	}
-	if (optionBuffer.size()) {
-		//std::tcout << "OPTION: " << optionBuffer << std::endl;
-		arguments.push_back(optionBuffer);
+	if (optionName.size()) {
+		arguments.push_back(optionName);
 	}
 
-	//for (std::map<std::tstring, std::pair<std::tstring, bool>, tstring_caseless_compare_t>::iterator opt = options.begin(); opt != options.end(); opt++) {
-	//	_arguments[*opt];
-	//}
-
+	// Actually process the arguments and store the values as needed. It
+	// stores "" for arguments that don't accept values.
 	std::tstring lastFlag(_T(""));
 	for (std::list<std::tstring>::iterator arg = arguments.begin(); arg != arguments.end(); arg++) {
 		if (((*arg)[0] == '/') || ((*arg)[0] == '-')) {

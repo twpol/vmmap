@@ -18,6 +18,8 @@ private:
 	std::tstring _username;
 public:
 	process(void);
+	// Create a process wrapper for a given PID. The process' creation time,
+	// image file path and file name and owning username are all collected.
 	process(DWORD pid);
 	~process(void);
 	DWORD process_id(void) const { return _process_id; }

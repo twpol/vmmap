@@ -14,6 +14,8 @@ const std::tstring MapDevicePathToDrivePath(const std::tstring& path)
 	// API: QueryDosDevice: Windows 2000 Pro/Server.
 
 	if (MapDevicePathToDrivePathCache.size() == 0) {
+		// Construct the cache of device paths to drive letters (e.g.
+		// "\Device\HarddiskVolume1\" -> "C:\", "\Device\CdRom0\" -> "D:\").
 		std::tstring drives(27, '\0');
 		int drives_length = GetLogicalDriveStrings(drives.size(), &*drives.begin());
 		if (drives_length) {
@@ -28,7 +30,6 @@ const std::tstring MapDevicePathToDrivePath(const std::tstring& path)
 					device.resize(device_length - 2);
 					device += '\\';
 					drive += '\\';
-					//std::tcout << "MapDevicePathToDrivePath: " << device << " --> " << drive << std::endl;
 					MapDevicePathToDrivePathCache[device] = drive;
 				} else {
 					std::tcerr << "QueryDosDevice(" << drive << ") failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
@@ -41,11 +42,14 @@ const std::tstring MapDevicePathToDrivePath(const std::tstring& path)
 		}
 	}
 
+	// Replace a matching device path with the appropriate drive letter.
 	for (std::map<const std::tstring, std::tstring>::iterator map = MapDevicePathToDrivePathCache.begin(); map != MapDevicePathToDrivePathCache.end(); map++) {
 		if (path.compare(0, (*map).first.size(), (*map).first) == 0) {
 			return (*map).second + path.substr((*map).first.size());
 		}
 	}
 
+	// No match, maybe it doesn't have a device path, or maybe we don't know
+	// about that drive (possibly only mounted to a directory).
 	return path;
 }

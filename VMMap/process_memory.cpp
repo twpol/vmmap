@@ -72,7 +72,6 @@ process_memory::process_memory(const process& process) : _process(process)
 		if (Thread32First(hSnapshot, &thread)) {
 			do {
 				if (thread.th32OwnerProcessID == _process.process_id()) {
-					//std::tcout << "  THREAD(" << std::dec << thread.th32OwnerProcessID << "/" << thread.th32ThreadID << "): flags=" << std::hex << thread.dwFlags << ", usage=" << std::dec << thread.cntUsage << std::endl;
 					HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, false, thread.th32ThreadID);
 					if (NULL != hThread) {
 						if (GetCurrentThreadId() != thread.th32ThreadID) {
@@ -93,7 +92,6 @@ process_memory::process_memory(const process& process) : _process(process)
 						if (GetThreadContext(hThread, &context_32bit)) {
 #endif
 							_stacks.push_back(process_stack(thread.th32ThreadID, context_32bit.Esp, PST_32BIT));
-							//std::tcout << "    STACK(" << std::hex << context_32bit.Esp << ") [32bit]" << std::endl;
 						} else if (GetLastError() != ERROR_INVALID_PARAMETER) {
 							std::tcerr << _process.process_id() << ": GetThreadContext(32bit) failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 						}
@@ -153,14 +151,10 @@ process_memory::process_memory(const process& process) : _process(process)
 			PROCESS_MEMORY_COUNTERS memory_counters = { 0 };
 			if (GetProcessMemoryInfo(hProcess, &memory_counters, sizeof(memory_counters))) {
 				unsigned long working_set_page_count = memory_counters.WorkingSetSize / performance_info.PageSize;
-				//std::tcout << "Working set pages expected = " << std::hex << working_set_page_count << std::endl;
-
 				unsigned long long buffer_length = sizeof(PSAPI_WORKING_SET_INFORMATION) + working_set_page_count * sizeof(PSAPI_WORKING_SET_BLOCK);
 				void* buffer = (void*)new byte[buffer_length];
 				if (QueryWorkingSet(hProcess, buffer, buffer_length)) {
 					PSAPI_WORKING_SET_INFORMATION* ws_info = (PSAPI_WORKING_SET_INFORMATION*)buffer;
-					//std::tcout << "Working set pages got      = " << std::hex << ws_info->NumberOfEntries << std::endl;
-
 					PSAPI_WORKING_SET_BLOCK* ws_block = (PSAPI_WORKING_SET_BLOCK*)ws_info->WorkingSetInfo;
 					for (unsigned long page = 0; page < ws_info->NumberOfEntries; page++, ws_block++) {
 						unsigned long long target_address = ws_block->VirtualPage * performance_info.PageSize;

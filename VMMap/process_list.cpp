@@ -8,8 +8,8 @@
 
 process_list::process_list(void)
 {
-	// Create process list for this user.
 	// API: EnumProcesses: Windows 2000 Pro/Server.
+
 	std::vector<DWORD> pids(1024);
 	DWORD pids_needed = 0;
 	if (!EnumProcesses(&*pids.begin(), pids.end() - pids.begin(), &pids_needed)) {
