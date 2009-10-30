@@ -14,9 +14,12 @@ process_memory::process_memory(const process& process) : _process(process)
 	// API: VirtualQueryEx: Windows 2000 Pro/Server.
 	// API: GetMappedFileName: Windows 2000 Pro/Server.
 
+	this->enable_privilege(SE_DEBUG_NAME);
+
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, _process.process_id());
 	if (NULL == hProcess) {
 		std::tcerr << _process.process_id() << ": OpenProcess failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+		this->disable_privilege(SE_DEBUG_NAME);
 		return;
 	}
 
@@ -182,10 +185,59 @@ process_memory::process_memory(const process& process) : _process(process)
 	}
 
 	CloseHandle(hProcess);
+	this->disable_privilege(SE_DEBUG_NAME);
 }
 
 process_memory::~process_memory(void)
 {
+}
+
+void process_memory::enable_privilege(const std::tstring privilege_name)
+{
+	HANDLE hToken;
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
+		return;
+	}
+	
+	LUID luid;
+	if (!LookupPrivilegeValue(NULL, privilege_name.c_str(), &luid)) {
+		return;
+	}
+	
+	TOKEN_PRIVILEGES tp;
+	tp.PrivilegeCount = 1;
+	tp.Privileges[0].Luid = luid;
+	tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, (PDWORD)NULL)) {
+		return;
+	}
+	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+		return;
+	}
+}
+
+void process_memory::disable_privilege(const std::tstring privilege_name)
+{
+	HANDLE hToken;
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
+		return;
+	}
+	
+	LUID luid;
+	if (!LookupPrivilegeValue(NULL, privilege_name.c_str(), &luid)) {
+		return;
+	}
+	
+	TOKEN_PRIVILEGES tp;
+	tp.PrivilegeCount = 1;
+	tp.Privileges[0].Luid = luid;
+	tp.Privileges[0].Attributes = 0;
+	if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, (PDWORD)NULL)) {
+		return;
+	}
+	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+		return;
+	}
 }
 
 unsigned long long process_memory::data(process_memory_group_type group_type, process_memory_data_type type) const

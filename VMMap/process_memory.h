@@ -137,6 +137,8 @@ private:
 	std::list<const process_stack> _stacks;
 	std::map<unsigned long long, process_memory_group> _groups;
 	process_memory operator=(const process_memory& self);
+	void enable_privilege(const std::tstring privilege_name);
+	void disable_privilege(const std::tstring privilege_name);
 public:
 	// Create and collect memory information about a given process. All
 	// collection happens immediately.
