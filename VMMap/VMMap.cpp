@@ -16,12 +16,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	UNREFERENCED_PARAMETER(argc);
 	UNREFERENCED_PARAMETER(argv);
 
-	commandline_options options(L"h ?,:pid,:im,:d,free,sum");
+	commandline_options options(L"h ?,:pid,:im,:d,free,sum,compare");
 
 	if (options.has(L"h")) {
 		std::tcout << "Gathers and reports on detailed memory usage by one or more process." << std::endl;
 		std::tcout << std::endl;
-		std::tcout << "VMMAP [[/PID pid|/IM image] [/D level] [/FREE] [/SUM]]" << std::endl;
+		std::tcout << "VMMAP [/PID pid|/IM image] [/D level] [/FREE] [/COMPARE] [/SUM]" << std::endl;
 		std::tcout << std::endl;
 		std::tcout << "  /PID        Report on a specific process. Can be specified multiple times." << std::endl;
 		std::tcout << "   pid        Process identifier." << std::endl;
@@ -34,6 +34,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << "              3  Adds table of each virtual memory allocation block." << std::endl;
 		std::tcout << "              4  Adds details on sub-block allocation statess." << std::endl;
 		std::tcout << "  /FREE       Include free memory ranges." << std::endl;
+		std::tcout << "  /COMPARE    Include a comparison, by process name, of all selected processes." << std::endl;
 		std::tcout << "  /SUM        Include a summary (detail level 2) of all selected processes." << std::endl;
 		std::tcout << std::endl;
 		std::tcout << "Access column key:" << std::endl;
@@ -101,125 +102,20 @@ int _tmain(int argc, _TCHAR* argv[])
 			std::tcout << "Process: " << process->image_filename() << std::endl;
 			std::tcout << "PID:     " << process->process_id() << std::endl;
 
+			if (level < 1) continue;
+
 			process_memory memory(*process);
 
-			if (level >= 1) {
-				unsigned long long vm_total = memory.data(PMGT_TOTAL, PMDT_COMMITTED);
-				unsigned long long ws_total = memory.data(PMGT_TOTAL, PMDT_WS_TOTAL);
-				unsigned long long vm_current = 0;
-				unsigned long long ws_current = 0;
-				std::tstring vm_summary;
-				std::tstring ws_summary;
-				if (vm_total > 0) {
-					for (process_memory_group_type group_type = PMGT_IMAGE; group_type < PMGT_FREE; group_type = (process_memory_group_type)((int)group_type + 1)) {
-						vm_current += memory.data(group_type, PMDT_COMMITTED);
-						ws_current += memory.data(group_type, PMDT_WS_TOTAL);
-						std::tstring vm_temp((int)(SUMMARY_SIZE * vm_current / vm_total) - vm_summary.size(), format_process_memory_group_type(group_type)[0]);
-						std::tstring ws_temp((int)(SUMMARY_SIZE * ws_current / vm_total) - ws_summary.size(), format_process_memory_group_type(group_type)[0]);
-						vm_summary += vm_temp;
-						ws_summary += ws_temp;
-					}
-				}
-				vm_summary.resize(SUMMARY_SIZE, '.');
-				ws_summary.resize(SUMMARY_SIZE, '.');
-
-				std::tcout << std::endl;
-				std::tcout << std::setw(80) << std::left << "Virtual Memory Summary:" << std::setw(20) << std::right << format_size(vm_total) << std::endl;
-				for (int i = 0; i < SUMMARY_SIZE; i += SUMMARY_ROW_SIZE) {
-					std::tcout << vm_summary.substr(i, SUMMARY_ROW_SIZE) << std::endl;
-				}
-
-				std::tcout << std::endl;
-				std::tcout << std::setw(80) << std::left << "Working Set Summary:" << std::setw(20) << std::right << format_size(ws_total) << std::endl;
-				for (int i = 0; i < SUMMARY_SIZE; i += SUMMARY_ROW_SIZE) {
-					std::tcout << ws_summary.substr(i, SUMMARY_ROW_SIZE) << std::endl;
-				}
-			}
-			if (level >= 2) {
-				std::tcout << std::endl;
-				std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << std::endl;
-				std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
-
-				for (process_memory_group_type group_type = PMGT__FIRST; group_type < PMGT__LAST; group_type = (process_memory_group_type)((int)group_type + 1)) {
-					std::tcout << std::setw(11) << std::setfill(L' ') << std::left << format_process_memory_group_type(group_type);
-					for (process_memory_data_type type = PMDT_SIZE; type < PMDT__LAST; type = (process_memory_data_type)((int)type + 1)) {
-						std::tcout << "  " << std::setw(type == PMDT_BLOCKS ? 6 : 12) << std::setfill(L' ') << std::right << (type == PMDT_BLOCKS ? format_number(memory.data(group_type, type)) : format_size(memory.data(group_type, type)));
-					}
-					std::tcout << std::endl;
-				}
-			}
-			if (level >= 3) {
-				std::tcout << std::endl;
-				std::tcout << std::left << std::setw(16) << "Address" << "    " << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << "  " << std::left << std::setw(7) << "Access" << "  " << "Details" << std::endl;
-				std::tcout << std::setw(134+64) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
-
-				for (std::map<unsigned long long, process_memory_group>::const_iterator it_group = memory.groups().begin(); it_group != memory.groups().end(); it_group++) {
-					const process_memory_group& group = (*it_group).second;
-					if ((group.type() == PMGT_FREE) && !options.has(L"free")) continue;
-
-					std::tcout         << std::setw(16) << std::setfill(L'0') << std::right << std::hex << group.base();
-					std::tcout << "  ";
-					std::tcout << "  " << std::setw(11) << std::setfill(L' ') << std::left  << format_process_memory_group_type(group.type());
-					std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.size());
-					std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.committed());
-					std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws());
-					std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws_private());
-					std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws_shareable());
-					std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws_shared());
-					std::tcout << "  " << std::setw(6)  << std::setfill(L' ') << std::right << format_number(group.blocks());
-					std::tcout << "  " << std::setw(7)  << std::setfill(L' ') << std::left  << group.protection_str();
-					std::tcout << "  "                  << std::setfill(L' ') << std::left  << group.details();
-					std::tcout << std::endl;
-
-					if (level >= 4) {
-						for (std::list<const process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
-							const process_memory_block& block = *it_block;
-							std::tcout << "  " << std::setw(16) << std::setfill(L'0') << std::right << std::hex << block.base();
-							std::tcout << "  " << std::setw(11) << std::setfill(L' ') << std::left  << format_process_memory_block_type(block.type());
-							std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.size());
-							std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.committed());
-							std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws());
-							std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws_private());
-							std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws_shareable());
-							std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws_shared());
-							std::tcout << "  " << std::setw(6)  << std::setfill(L' ') << std::right << format_number(0);
-							std::tcout << "  " << std::setw(7)  << std::setfill(L' ') << std::left  << block.protection_str();
-							std::tcout << "  "                  << std::setfill(L' ') << std::left  << block.details();
-							std::tcout << std::endl;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if (options.has(L"sum")) {
-		std::tcout << std::endl;
-		std::tcout << "Process: <summary>" << std::endl;
-		std::tcout << "PID:     <summary>" << std::endl;
-
-		std::list<const process_memory> memories;
-		for (std::list<const process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
-			memories.push_back(process_memory(*process));
-		}
-
-		{
-			unsigned long long vm_total = 0;
-			unsigned long long ws_total = 0;
-			for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
-				vm_total += memory->data(PMGT_TOTAL, PMDT_COMMITTED);
-				ws_total += memory->data(PMGT_TOTAL, PMDT_WS_TOTAL);
-			}
+			unsigned long long vm_total = memory.data(PMGT_TOTAL, PMDT_COMMITTED);
+			unsigned long long ws_total = memory.data(PMGT_TOTAL, PMDT_WS_TOTAL);
 			unsigned long long vm_current = 0;
 			unsigned long long ws_current = 0;
 			std::tstring vm_summary;
 			std::tstring ws_summary;
 			if (vm_total > 0) {
 				for (process_memory_group_type group_type = PMGT_IMAGE; group_type < PMGT_FREE; group_type = (process_memory_group_type)((int)group_type + 1)) {
-					for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
-						vm_current += memory->data(group_type, PMDT_COMMITTED);
-						ws_current += memory->data(group_type, PMDT_WS_TOTAL);
-					}
+					vm_current += memory.data(group_type, PMDT_COMMITTED);
+					ws_current += memory.data(group_type, PMDT_WS_TOTAL);
 					std::tstring vm_temp((int)(SUMMARY_SIZE * vm_current / vm_total) - vm_summary.size(), format_process_memory_group_type(group_type)[0]);
 					std::tstring ws_temp((int)(SUMMARY_SIZE * ws_current / vm_total) - ws_summary.size(), format_process_memory_group_type(group_type)[0]);
 					vm_summary += vm_temp;
@@ -240,8 +136,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			for (int i = 0; i < SUMMARY_SIZE; i += SUMMARY_ROW_SIZE) {
 				std::tcout << ws_summary.substr(i, SUMMARY_ROW_SIZE) << std::endl;
 			}
-		}
-		{
+
+			if (level < 2) continue;
+
 			std::tcout << std::endl;
 			std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << std::endl;
 			std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
@@ -249,14 +146,151 @@ int _tmain(int argc, _TCHAR* argv[])
 			for (process_memory_group_type group_type = PMGT__FIRST; group_type < PMGT__LAST; group_type = (process_memory_group_type)((int)group_type + 1)) {
 				std::tcout << std::setw(11) << std::setfill(L' ') << std::left << format_process_memory_group_type(group_type);
 				for (process_memory_data_type type = PMDT_SIZE; type < PMDT__LAST; type = (process_memory_data_type)((int)type + 1)) {
-					unsigned long long sum = 0;
-					for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
-						sum += memory->data(group_type, type);
-					}
-					std::tcout << "  " << std::setw(type == PMDT_BLOCKS ? 6 : 12) << std::setfill(L' ') << std::right << (type == PMDT_BLOCKS ? format_number(sum) : format_size(sum));
+					std::tcout << "  " << std::setw(type == PMDT_BLOCKS ? 6 : 12) << std::setfill(L' ') << std::right << (type == PMDT_BLOCKS ? format_number(memory.data(group_type, type)) : format_size(memory.data(group_type, type)));
 				}
 				std::tcout << std::endl;
 			}
+
+			if (level < 3) continue;
+
+			std::tcout << std::endl;
+			std::tcout << std::left << std::setw(16) << "Address" << "    " << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << "  " << std::left << std::setw(7) << "Access" << "  " << "Details" << std::endl;
+			std::tcout << std::setw(134+64) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
+
+			for (std::map<unsigned long long, process_memory_group>::const_iterator it_group = memory.groups().begin(); it_group != memory.groups().end(); it_group++) {
+				const process_memory_group& group = (*it_group).second;
+				if ((group.type() == PMGT_FREE) && !options.has(L"free")) continue;
+
+				std::tcout         << std::setw(16) << std::setfill(L'0') << std::right << std::hex << group.base();
+				std::tcout << "  ";
+				std::tcout << "  " << std::setw(11) << std::setfill(L' ') << std::left  << format_process_memory_group_type(group.type());
+				std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.size());
+				std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.committed());
+				std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws());
+				std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws_private());
+				std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws_shareable());
+				std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(group.ws_shared());
+				std::tcout << "  " << std::setw(6)  << std::setfill(L' ') << std::right << format_number(group.blocks());
+				std::tcout << "  " << std::setw(7)  << std::setfill(L' ') << std::left  << group.protection_str();
+				std::tcout << "  "                  << std::setfill(L' ') << std::left  << group.details();
+				std::tcout << std::endl;
+
+				if (level >= 4) {
+					for (std::list<const process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
+						const process_memory_block& block = *it_block;
+						std::tcout << "  " << std::setw(16) << std::setfill(L'0') << std::right << std::hex << block.base();
+						std::tcout << "  " << std::setw(11) << std::setfill(L' ') << std::left  << format_process_memory_block_type(block.type());
+						std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.size());
+						std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.committed());
+						std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws());
+						std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws_private());
+						std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws_shareable());
+						std::tcout << "  " << std::setw(12) << std::setfill(L' ') << std::right << format_size(block.ws_shared());
+						std::tcout << "  " << std::setw(6)  << std::setfill(L' ') << std::right << format_number(0);
+						std::tcout << "  " << std::setw(7)  << std::setfill(L' ') << std::left  << block.protection_str();
+						std::tcout << "  "                  << std::setfill(L' ') << std::left  << block.details();
+						std::tcout << std::endl;
+					}
+				}
+			}
+		}
+	}
+
+	if (options.has(L"compare")) {
+		std::tcout << std::endl;
+		std::tcout << "Process: <comparison>" << std::endl;
+		std::tcout << "PID:     <comparison>" << std::endl;
+
+		std::map<std::tstring, std::list<const process_memory>, tstring_caseless_compare_t> memories;
+		for (std::list<const process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
+			memories[process->image_filename()].push_back(process_memory(*process));
+		}
+
+		std::tcout << std::endl;
+		std::tcout << std::left << std::setw(35) << "" << std::right << std::setw(26) << "Physical Memory" << "  " << std::setw(40) << "Virtual Memory" << std::endl;
+		std::tcout << std::left << std::setw(33) << "Process" << "  " << std::right << std::setw(12) << "Private" << "  " << std::setw(12) << "Shared" << "  " << std::setw(12) << "Total" << "  " << std::setw(12) << "Private" << "  " << std::setw(12) << "Mapped" << std::endl;
+		std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
+
+		for (std::map<std::tstring, std::list<const process_memory>, tstring_caseless_compare_t>::const_iterator pms = memories.begin(); pms != memories.end(); pms++) {
+			unsigned long long ws_private = 0;
+			unsigned long long ws_shared = 0;
+			unsigned long long vm_private = 0;
+			unsigned long long vm_mapped = 0;
+
+			for (std::list<const process_memory>::const_iterator pm = pms->second.begin(); pm != pms->second.end(); pm++) {
+				ws_private += pm->data(PMGT_TOTAL, PMDT_WS_TOTAL) - pm->data(PMGT_TOTAL, PMDT_WS_SHARED);
+				ws_shared += pm->data(PMGT_TOTAL, PMDT_WS_SHARED);
+				vm_private += pm->data(PMGT_PRIVATE, PMDT_COMMITTED) + pm->data(PMGT_HEAP, PMDT_COMMITTED) + pm->data(PMGT_STACK, PMDT_COMMITTED);
+				vm_mapped += pm->data(PMGT_SHAREABLE, PMDT_COMMITTED) + pm->data(PMGT_MAPPED_FILE, PMDT_COMMITTED);
+			}
+
+			std::tcout << std::left << std::setw(33) << pms->first << "  " << std::right << std::setw(12) << format_size(ws_private) << "  " << std::setw(12) << format_size(ws_shared / pms->second.size()) << "  " << std::setw(12) << format_size(ws_private + ws_shared / pms->second.size()) << "  " << std::setw(12) << format_size(vm_private) << "  " << std::setw(12) << format_size(vm_mapped) << std::endl;
+		}
+	}
+
+	if (options.has(L"sum")) {
+		std::tcout << std::endl;
+		std::tcout << "Process: <summary>" << std::endl;
+		std::tcout << "PID:     <summary>" << std::endl;
+
+		std::list<const process_memory> memories;
+		for (std::list<const process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
+			memories.push_back(process_memory(*process));
+		}
+
+		unsigned long long vm_total = 0;
+		unsigned long long ws_total = 0;
+		for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
+			vm_total += memory->data(PMGT_TOTAL, PMDT_COMMITTED);
+			ws_total += memory->data(PMGT_TOTAL, PMDT_WS_TOTAL);
+		}
+
+		unsigned long long vm_current = 0;
+		unsigned long long ws_current = 0;
+		std::tstring vm_summary;
+		std::tstring ws_summary;
+		if (vm_total > 0) {
+			for (process_memory_group_type group_type = PMGT_IMAGE; group_type < PMGT_FREE; group_type = (process_memory_group_type)((int)group_type + 1)) {
+				for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
+					vm_current += memory->data(group_type, PMDT_COMMITTED);
+					ws_current += memory->data(group_type, PMDT_WS_TOTAL);
+				}
+				std::tstring vm_temp((int)(SUMMARY_SIZE * vm_current / vm_total) - vm_summary.size(), format_process_memory_group_type(group_type)[0]);
+				std::tstring ws_temp((int)(SUMMARY_SIZE * ws_current / vm_total) - ws_summary.size(), format_process_memory_group_type(group_type)[0]);
+				vm_summary += vm_temp;
+				ws_summary += ws_temp;
+			}
+		}
+
+		vm_summary.resize(SUMMARY_SIZE, '.');
+		ws_summary.resize(SUMMARY_SIZE, '.');
+
+		std::tcout << std::endl;
+		std::tcout << std::setw(80) << std::left << "Virtual Memory Summary:" << std::setw(20) << std::right << format_size(vm_total) << std::endl;
+		for (int i = 0; i < SUMMARY_SIZE; i += SUMMARY_ROW_SIZE) {
+			std::tcout << vm_summary.substr(i, SUMMARY_ROW_SIZE) << std::endl;
+		}
+
+		std::tcout << std::endl;
+		std::tcout << std::setw(80) << std::left << "Working Set Summary:" << std::setw(20) << std::right << format_size(ws_total) << std::endl;
+		for (int i = 0; i < SUMMARY_SIZE; i += SUMMARY_ROW_SIZE) {
+			std::tcout << ws_summary.substr(i, SUMMARY_ROW_SIZE) << std::endl;
+		}
+
+		std::tcout << std::endl;
+		std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << std::endl;
+		std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
+
+		for (process_memory_group_type group_type = PMGT__FIRST; group_type < PMGT__LAST; group_type = (process_memory_group_type)((int)group_type + 1)) {
+			std::tcout << std::setw(11) << std::setfill(L' ') << std::left << format_process_memory_group_type(group_type);
+			for (process_memory_data_type type = PMDT_SIZE; type < PMDT__LAST; type = (process_memory_data_type)((int)type + 1)) {
+				unsigned long long sum = 0;
+				for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
+					sum += memory->data(group_type, type);
+				}
+				std::tcout << "  " << std::setw(type == PMDT_BLOCKS ? 6 : 12) << std::setfill(L' ') << std::right << (type == PMDT_BLOCKS ? format_number(sum) : format_size(sum));
+			}
+			std::tcout << std::endl;
 		}
 	}
 
