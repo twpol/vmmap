@@ -18,7 +18,7 @@ process_memory::process_memory(const process& process) : _process(process)
 
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, _process.process_id());
 	if (NULL == hProcess) {
-		std::tcerr << _process.process_id() << ": OpenProcess failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+		std::tcerr << std::dec << _process.process_id() << ": OpenProcess failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		this->disable_privilege(SE_DEBUG_NAME);
 		return;
 	}
@@ -32,7 +32,7 @@ process_memory::process_memory(const process& process) : _process(process)
 				_modules.push_back(process_module((unsigned long long)module.modBaseAddr, (unsigned long long)module.modBaseSize, module.szExePath));
 			} while (Module32Next(hSnapshot, &module));
 		} else {
-			std::tcerr << _process.process_id() << ": Module32First failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << _process.process_id() << ": Module32First failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 
 		HEAPLIST32 heap = { sizeof(heap) };
@@ -59,16 +59,16 @@ process_memory::process_memory(const process& process) : _process(process)
 				//				}
 				//				std::tcout << std::setfill(_T(' ')) << std::endl;
 				//			} else {
-				//				std::tcerr << _process.process_id() << ": ReadProcessMemory failed: " << buffer_length << " bytes, " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+				//				std::tcerr << std::dec << _process.process_id() << ": ReadProcessMemory failed: " << buffer_length << " bytes, " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 				//			}
 				//		}
 				//	} while (Heap32Next(&heap_block));
 				//} else {
-				//	std::tcerr << _process.process_id() << ": Heap32First failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+				//	std::tcerr << std::dec << _process.process_id() << ": Heap32First failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 				//}
 			} while (Heap32ListNext(hSnapshot, &heap));
 		} else {
-			std::tcerr << _process.process_id() << ": Heap32ListFirst failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << _process.process_id() << ": Heap32ListFirst failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 
 		THREADENTRY32 thread = { sizeof(thread) };
@@ -84,9 +84,8 @@ process_memory::process_memory(const process& process) : _process(process)
 						CONTEXT context_64bit = {}; context_64bit.ContextFlags = CONTEXT_CONTROL;
 						if (GetThreadContext(hThread, &context_64bit)) {
 							_stacks.push_back(process_stack(thread.th32ThreadID, context_64bit.Rsp, PST_64BIT));
-							//std::tcout << "    STACK(" << std::hex << context_64bit.Rsp << ") [64bit]" << std::endl;
 						} else if (GetLastError() != ERROR_INVALID_PARAMETER) {
-							std::tcerr << _process.process_id() << ": GetThreadContext(64bit) failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+							std::tcerr << std::dec << _process.process_id() << ": GetThreadContext(64bit) failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 						}
 						WOW64_CONTEXT context_32bit = { WOW64_CONTEXT_ALL };
 						if (Wow64GetThreadContext(hThread, &context_32bit)) {
@@ -96,18 +95,18 @@ process_memory::process_memory(const process& process) : _process(process)
 #endif
 							_stacks.push_back(process_stack(thread.th32ThreadID, context_32bit.Esp, PST_32BIT));
 						} else if (GetLastError() != ERROR_INVALID_PARAMETER) {
-							std::tcerr << _process.process_id() << ": GetThreadContext(32bit) failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+							std::tcerr << std::dec << _process.process_id() << ": GetThreadContext(32bit) failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 						}
 						if (GetCurrentThreadId() != thread.th32ThreadID) {
 							ResumeThread(hThread);
 						}
 					} else {
-						std::tcerr << _process.process_id() << ": OpenThread failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+						std::tcerr << std::dec << _process.process_id() << ": OpenThread failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 					}
 				}
 			} while (Thread32Next(hSnapshot, &thread));
 		} else {
-			std::tcerr << _process.process_id() << ": Thread32First failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << _process.process_id() << ": Thread32First failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 
 		CloseHandle(hSnapshot);
@@ -125,10 +124,10 @@ process_memory::process_memory(const process& process) : _process(process)
 			size_t info_size = VirtualQueryEx(hProcess, (void*)address, &info, sizeof(info));
 			if (info_size == 0) break;
 			if (info_size != sizeof(info)) {
-				std::tcerr << "VirtualQueryEx returned unexpected info_size (" << std::hex << info_size << ", expected " << std::hex << sizeof(info) << ")" << std::endl;
+				std::tcerr << std::dec << _process.process_id() << "VirtualQueryEx returned unexpected info_size (" << std::hex << info_size << ", expected " << std::hex << sizeof(info) << ")" << std::endl;
 			}
 			if (info.BaseAddress != (void*)address) {
-				std::tcerr << "VirtualQueryEx returned unexpected BaseAddress (" << std::hex << info.BaseAddress << ", expected " << std::hex << (void*)address << ")" << std::endl;
+				std::tcerr << std::dec << _process.process_id() << "VirtualQueryEx returned unexpected BaseAddress (" << std::hex << info.BaseAddress << ", expected " << std::hex << (void*)address << ")" << std::endl;
 			}
 
 			unsigned long long allocation_base = (unsigned long long)info.AllocationBase;
@@ -174,13 +173,13 @@ process_memory::process_memory(const process& process) : _process(process)
 						}
 					}
 				} else {
-					std::tcerr << _process.process_id() << ": QueryWorkingSet failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+					std::tcerr << std::dec << _process.process_id() << ": QueryWorkingSet failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 				}
 			} else {
-				std::tcerr << _process.process_id() << ": GetProcessMemoryInfo failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+				std::tcerr << std::dec << _process.process_id() << ": GetProcessMemoryInfo failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 			}
 		} else {
-			std::tcerr << _process.process_id() << ": GetProcessMemoryInfo failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << _process.process_id() << ": GetProcessMemoryInfo failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 	}
 

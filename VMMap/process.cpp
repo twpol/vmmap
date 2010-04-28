@@ -34,7 +34,7 @@ process::process(DWORD pid) : _process_id(pid)
 		if (GetProcessTimes(hProcess, &ctime, &etime, &ktime, &utime)) {
 			_creation_time = ctime;
 		} else {
-			std::tcerr << pid << ": GetProcessTimes failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << pid << ": GetProcessTimes failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 
 #if _WIN32_WINNT < 0x0600
@@ -44,7 +44,7 @@ process::process(DWORD pid) : _process_id(pid)
 		if (image_length > 0) {
 			image.resize(image_length);
 		} else {
-			std::tcerr << pid << ": GetModuleFileNameEx failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << pid << ": GetModuleFileNameEx failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 #else
 		std::tstring image(MAX_PATH, '\0');
@@ -53,7 +53,7 @@ process::process(DWORD pid) : _process_id(pid)
 		if (QueryFullProcessImageName(hProcess, 0, &image[0], &image_length)) {
 			image.resize(image_length);
 		} else {
-			std::tcerr << pid << ": QueryFullProcessImageName failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << pid << ": QueryFullProcessImageName failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 #endif
 
@@ -85,18 +85,18 @@ process::process(DWORD pid) : _process_id(pid)
 						}
 						_username += name;
 					} else {
-						std::tcerr << pid << ": LookupAccountSid failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+						std::tcerr << std::dec << pid << ": LookupAccountSid failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 					}
 				} else {
-					std::tcerr << pid << ": GetTokenInformation(2) failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+					std::tcerr << std::dec << pid << ": GetTokenInformation(2) failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 				}
 				delete data;
 			} else {
-				std::tcerr << pid << ": GetTokenInformation failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+				std::tcerr << std::dec << pid << ": GetTokenInformation failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 			}
 			CloseHandle(hProcessToken);
 		} else {
-			std::tcerr << pid << ": OpenProcessToken failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
+			std::tcerr << std::dec << pid << ": OpenProcessToken failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 		}
 
 		CloseHandle(hProcess);

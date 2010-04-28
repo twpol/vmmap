@@ -207,7 +207,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 
 		std::tcout << std::endl;
-		std::tcout << std::left << std::setw(35) << "" << std::right << std::setw(26) << "Physical Memory" << "  " << std::setw(40) << "Virtual Memory" << std::endl;
+		std::tcout << std::left << std::setw(35) << "" << std::right << std::setw(40) << "Physical Memory" << "  " << std::setw(26) << "Virtual Memory" << std::endl;
 		std::tcout << std::left << std::setw(33) << "Process" << "  " << std::right << std::setw(12) << "Private" << "  " << std::setw(12) << "Shared" << "  " << std::setw(12) << "Total" << "  " << std::setw(12) << "Private" << "  " << std::setw(12) << "Mapped" << std::endl;
 		std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
 
