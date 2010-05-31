@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // http://twpol.dyndns.org/projects/vmmap
-// License: Microsoft Public License (Ms-PL).
+// License: New BSD License (BSD).
 //------------------------------------------------------------------------------
 
 #include "StdAfx.h"

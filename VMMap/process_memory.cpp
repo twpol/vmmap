@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // http://twpol.dyndns.org/projects/vmmap
-// License: Microsoft Public License (Ms-PL).
+// License: New BSD License (BSD).
 //------------------------------------------------------------------------------
 
 #include "StdAfx.h"
@@ -9,10 +9,11 @@
 
 process_memory::process_memory(const process& process) : _process(process)
 {
-	// API: CreateToolhelp32Snapshot: Windows 2000 Pro/Server.
-	// API: OpenProcess: Windows 2000 Pro/Server.
-	// API: VirtualQueryEx: Windows 2000 Pro/Server.
-	// API: GetMappedFileName: Windows 2000 Pro/Server.
+	// NT API Support:
+	//   5.0  CreateToolhelp32Snapshot
+	//   5.0  GetMappedFileName
+	//   5.0  OpenProcess
+	//   5.0  VirtualQueryEx
 
 	this->enable_privilege(SE_DEBUG_NAME);
 
@@ -41,6 +42,7 @@ process_memory::process_memory(const process& process) : _process(process)
 			do {
 				_heaps.push_back(process_heap(heap_index++, (unsigned long long)heap.th32HeapID, heap.dwFlags & HF32_DEFAULT));
 				
+				// TODO: http://www.securityxploded.com/enumheaps.php
 				//HEAPENTRY32 heap_block = { sizeof(HEAPENTRY32) };
 				//if (Heap32First(&heap_block, heap.th32ProcessID, heap.th32HeapID)) {
 				//	do {

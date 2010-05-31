@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // http://twpol.dyndns.org/projects/vmmap
-// License: Microsoft Public License (Ms-PL).
+// License: New BSD License (BSD).
 //------------------------------------------------------------------------------
 
 #include "StdAfx.h"
@@ -12,14 +12,15 @@ process::process(void) : _process_id(0)
 
 process::process(DWORD pid) : _process_id(pid)
 {
-	// API: OpenProcess: Windows 2000 Pro/Server.
-	// API: GetProcessTimes: Windows 2000 Pro/Server.
-	// API: GetModuleFileNameEx: Windows 2000 Pro/Server.
-	// API: GetProcessImageFileName: Windows XP/Server 2003.
-	// API: QueryFullProcessImageName: Windows Vista/Server 2008.
-	// API: OpenProcessToken: Windows 2000 Pro/Server.
-	// API: GetTokenInformation: Windows 2000 Pro/Server.
-	// API: LookupAccountSid: Windows 2000 Pro/Server.
+	// NT API Support:
+	//   5.0  GetModuleFileNameEx
+	//   5.1  GetProcessImageFileName
+	//   5.0  GetProcessTimes
+	//   5.0  GetTokenInformation
+	//   5.0  LookupAccountSid
+	//   5.0  OpenProcess
+	//   5.0  OpenProcessToken
+	//   6.0  QueryFullProcessImageName
 #if _WIN32_WINNT < 0x0600
 	//HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 #else

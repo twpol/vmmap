@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // http://twpol.dyndns.org/projects/vmmap
-// License: Microsoft Public License (Ms-PL).
+// License: New BSD License (BSD).
 //------------------------------------------------------------------------------
 
 #include "StdAfx.h"
@@ -10,8 +10,9 @@ std::map<const std::tstring, std::tstring> MapDevicePathToDrivePathCache;
 
 const std::tstring MapDevicePathToDrivePath(const std::tstring& path)
 {
-	// API: GetLogicalDriveStrings: Windows 2000 Pro/Server.
-	// API: QueryDosDevice: Windows 2000 Pro/Server.
+	// NT API Support:
+	//   5.0  GetLogicalDriveStrings
+	//   5.0  QueryDosDevice
 
 	if (MapDevicePathToDrivePathCache.size() == 0) {
 		// Construct the cache of device paths to drive letters (e.g.

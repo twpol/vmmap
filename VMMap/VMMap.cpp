@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // http://twpol.dyndns.org/projects/vmmap
-// License: Microsoft Public License (Ms-PL).
+// License: New BSD License (BSD).
 //------------------------------------------------------------------------------
 
 // VMMap.cpp : Defines the entry point for the console application.

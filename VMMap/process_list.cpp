@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // http://twpol.dyndns.org/projects/vmmap
-// License: Microsoft Public License (Ms-PL).
+// License: New BSD License (BSD).
 //------------------------------------------------------------------------------
 
 #include "StdAfx.h"
@@ -8,7 +8,8 @@
 
 process_list::process_list(void)
 {
-	// API: EnumProcesses: Windows 2000 Pro/Server.
+	// NT API Support:
+	//   5.0  EnumProcesses
 
 	std::vector<DWORD> pids(1024);
 	DWORD pids_needed = 0;

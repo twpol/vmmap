@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // http://twpol.dyndns.org/projects/vmmap
-// License: Microsoft Public License (Ms-PL).
+// License: New BSD License (BSD).
 //------------------------------------------------------------------------------
 
 #include "StdAfx.h"
@@ -9,7 +9,8 @@
 
 commandline_options::commandline_options(const std::tstring settings)
 {
-	// API: GetCommandLine: Windows 2000 Pro/Server.
+	// NT API Support:
+	//   5.0  GetCommandLine
 
 	// Alias -> (Canonical Name, Has Value)
 	std::map<std::tstring, std::pair<std::tstring, bool>, tstring_caseless_compare_t> options;
