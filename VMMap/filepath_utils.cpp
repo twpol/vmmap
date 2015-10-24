@@ -6,7 +6,7 @@
 #include "StdAfx.h"
 #include "filepath_utils.h"
 
-std::map<const std::tstring, std::tstring> MapDevicePathToDrivePathCache;
+std::map<std::tstring, std::tstring> MapDevicePathToDrivePathCache;
 
 const std::tstring MapDevicePathToDrivePath(const std::tstring& path)
 {
@@ -44,7 +44,7 @@ const std::tstring MapDevicePathToDrivePath(const std::tstring& path)
 	}
 
 	// Replace a matching device path with the appropriate drive letter.
-	for (std::map<const std::tstring, std::tstring>::iterator map = MapDevicePathToDrivePathCache.begin(); map != MapDevicePathToDrivePathCache.end(); map++) {
+	for (std::map<std::tstring, std::tstring>::iterator map = MapDevicePathToDrivePathCache.begin(); map != MapDevicePathToDrivePathCache.end(); map++) {
 		if (path.compare(0, (*map).first.size(), (*map).first) == 0) {
 			return (*map).second + path.substr((*map).first.size());
 		}

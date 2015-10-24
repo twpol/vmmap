@@ -59,8 +59,8 @@ public:
 	process_memory_block(const process_memory& memory, const HANDLE hProcess, process_memory_group& group, const PMEMORY_BASIC_INFORMATION info);
 	~process_memory_block(void);
 
-	unsigned long long data(process_memory_data_type type) const;
-#define DATA_ACCESS_PMB(name, key) unsigned long long name(void) const { return _data[PMDT_ ## key]; }
+	const unsigned long long data(const process_memory_data_type type) const;
+#define DATA_ACCESS_PMB(name, key) const unsigned long long name(void) const { return _data[PMDT_ ## key]; }
 	DATA_ACCESS_PMB(base, BASE);
 	DATA_ACCESS_PMB(size, SIZE);
 	DATA_ACCESS_PMB(committed, COMMITTED);
@@ -70,13 +70,13 @@ public:
 	DATA_ACCESS_PMB(ws_shared, WS_SHARED);
 	DATA_ACCESS_PMB(blocks, BLOCKS);
 
-	process_memory_block_type type(void) const { return _type; }
-	process_memory_protection protection(void) const { return _protection; }
-	std::tstring protection_str(void) const;
+	const process_memory_block_type type(void) const { return _type; }
+	const process_memory_protection protection(void) const { return _protection; }
+	const std::tstring protection_str(void) const;
 	const std::tstring details(void) const { return _details; }
-	void details(const std::tstring details) { _details = details; }
+	const void details(const std::tstring details) { _details = details; }
 
-	void add_ws_page(PSAPI_WORKING_SET_BLOCK* ws_block, unsigned long page_size);
+	const void add_ws_page(const PSAPI_WORKING_SET_BLOCK* ws_block, const unsigned long page_size);
 	operator unsigned long long(void) const { return _data[PMDT_BASE]; }
 };
 
@@ -99,14 +99,14 @@ class process_memory_group
 private:
 	process_memory_group_type _type;
 	std::tstring _details;
-	std::list<const process_memory_block> _blocks;
+	std::list<process_memory_block> _blocks;
 public:
 	process_memory_group(void);
 	process_memory_group(const process_memory& memory, const HANDLE hProcess, const PMEMORY_BASIC_INFORMATION info);
 	~process_memory_group(void);
 
-	unsigned long long data(process_memory_data_type type) const;
-#define DATA_ACCESS_PMG(name, key) unsigned long long name(void) const { return data(PMDT_ ## key); }
+	const unsigned long long data(const process_memory_data_type type) const;
+#define DATA_ACCESS_PMG(name, key) const unsigned long long name(void) const { return data(PMDT_ ## key); }
 	DATA_ACCESS_PMG(base, BASE);
 	DATA_ACCESS_PMG(size, SIZE);
 	DATA_ACCESS_PMG(committed, COMMITTED);
@@ -116,15 +116,15 @@ public:
 	DATA_ACCESS_PMG(ws_shared, WS_SHARED);
 	DATA_ACCESS_PMG(blocks, BLOCKS);
 
-	process_memory_group_type type(void) const { return _type; }
-	void type(process_memory_group_type type) { _type = type; }
-	process_memory_protection protection(void) const;
-	std::tstring protection_str(void) const;
+	const process_memory_group_type type(void) const { return _type; }
+	const void type(const process_memory_group_type type) { _type = type; }
+	const process_memory_protection protection(void) const;
+	const std::tstring protection_str(void) const;
 	const std::tstring details(void) const { return _details; }
-	void details(const std::tstring details) { _details = details; }
+	const void details(const std::tstring details) { _details = details; }
 
-	const std::list<const process_memory_block>& block_list(void) const { return _blocks; }
-	void add_block(const process_memory_block& block);
+	const std::list<process_memory_block>& block_list(void) const { return _blocks; }
+	const void add_block(const process_memory_block& block);
 	operator unsigned long long(void) const { return data(PMDT_BASE); }
 };
 
@@ -132,9 +132,9 @@ class process_memory
 {
 private:
 	const process& _process;
-	std::list<const process_module> _modules;
-	std::list<const process_heap> _heaps;
-	std::list<const process_stack> _stacks;
+	std::list<process_module> _modules;
+	std::list<process_heap> _heaps;
+	std::list<process_stack> _stacks;
 	std::map<unsigned long long, process_memory_group> _groups;
 	process_memory operator=(const process_memory& self);
 	void enable_privilege(const std::tstring privilege_name);
@@ -145,13 +145,13 @@ public:
 	process_memory(const process& process);
 	~process_memory(void);
 	// Returns a list of modules (mapped code) found.
-	const std::list<const process_module>& modules(void) const { return _modules; }
+	const std::list<process_module>& modules(void) const { return _modules; }
 	// Returns a list of heaps (private memory) found.
-	const std::list<const process_heap>& heaps(void) const { return _heaps; }
+	const std::list<process_heap>& heaps(void) const { return _heaps; }
 	// Returns a list of stacks (per-thread private memmory) found.
-	const std::list<const process_stack>& stacks(void) const { return _stacks; }
+	const std::list<process_stack>& stacks(void) const { return _stacks; }
 	// Returns a map of memory groups (by type).
 	const std::map<unsigned long long, process_memory_group>& groups(void) const { return _groups; }
 	// Returns specific memory data for the whole process.
-	unsigned long long data(process_memory_group_type group_type, process_memory_data_type type) const;
+	const unsigned long long data(const process_memory_group_type group_type, const process_memory_data_type type) const;
 };

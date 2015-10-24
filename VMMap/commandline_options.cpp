@@ -136,20 +136,20 @@ commandline_options::commandline_options(const std::tstring settings)
 	}
 }
 
-const bool commandline_options::has(const std::tstring option)
+const bool commandline_options::has(const std::tstring option) const
 {
-	std::map<const std::tstring, std::list<const std::tstring> >::const_iterator item = _arguments.find(option);
+	const std::map<std::tstring, std::list<std::tstring> >::const_iterator item = _arguments.find(option);
 	return (item != _arguments.end());
 }
 
-const std::tstring& commandline_options::get(const std::tstring option)
+const std::tstring& commandline_options::get(const std::tstring option) const
 {
-	std::map<const std::tstring, std::list<const std::tstring> >::const_iterator item = _arguments.find(option);
+	const std::map<std::tstring, std::list<std::tstring> >::const_iterator item = _arguments.find(option);
 	return *item->second.begin();
 }
 
-const std::list<const std::tstring>& commandline_options::gets(const std::tstring option)
+const std::list<std::tstring>& commandline_options::gets(const std::tstring option) const
 {
-	std::map<const std::tstring, std::list<const std::tstring> >::const_iterator item = _arguments.find(option);
+	const std::map<std::tstring, std::list<std::tstring> >::const_iterator item = _arguments.find(option);
 	return item->second;
 }

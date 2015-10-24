@@ -52,17 +52,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << std::endl;
 		std::tcout << " " << std::setw(30) << std::left << "Username" << "  " << std::right << std::setw(6) << "PID" << "  " << "Image Name" << std::endl;
 		std::tcout << " " << std::setw(78) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
-		for (std::list<const process>::const_iterator process = processes.get().begin(); process != processes.get().end(); process++) {
+		for (std::list<process>::const_iterator process = processes.get().begin(); process != processes.get().end(); process++) {
 			std::tcout << " " << std::setw(30) << std::left << process->username() << "  " << std::right << std::setw(6) << process->process_id() << "  " << process->image_filename() << std::endl;
 		}
 		return 0;
 	}
 
-	std::list<const process> processes;
+	std::list<process> processes;
 	{
 		if (options.has(L"pid")) {
-			std::list<const std::tstring> pids = options.gets(L"pid");
-			for (std::list<const std::tstring>::const_iterator pid = pids.begin(); pid != pids.end(); pid++) {
+			const std::list<std::tstring> pids = options.gets(L"pid");
+			for (std::list<std::tstring>::const_iterator pid = pids.begin(); pid != pids.end(); pid++) {
 				if ((*pid).compare(L"self") == 0) {
 					processes.push_back(process(GetCurrentProcessId()));
 				} else {
@@ -71,18 +71,18 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 		}
 		if (options.has(L"im")) {
-			std::list<const std::tstring> ims = options.gets(L"im");
-			std::map<std::tstring, std::list<const process>, tstring_caseless_compare_t> process_map;
+			const std::list<std::tstring> ims = options.gets(L"im");
+			std::map<std::tstring, std::list<process>, tstring_caseless_compare_t> process_map;
 			process_list process_list;
-			for (std::list<const process>::const_iterator process = process_list.get().begin(); process != process_list.get().end(); process++) {
+			for (std::list<process>::const_iterator process = process_list.get().begin(); process != process_list.get().end(); process++) {
 				process_map[process->image_filename()].push_back(*process);
 			}
 
-			for (std::list<const std::tstring>::const_iterator im = ims.begin(); im != ims.end(); im++) {
+			for (std::list<std::tstring>::const_iterator im = ims.begin(); im != ims.end(); im++) {
 				if (process_map.find(*im) != process_map.end()) {
 					processes.merge(process_map[*im]);
 				} else if (im->compare(L"*") == 0) {
-					for (std::list<const process>::const_iterator process = process_list.get().begin(); process != process_list.get().end(); process++) {
+					for (std::list<process>::const_iterator process = process_list.get().begin(); process != process_list.get().end(); process++) {
 						processes.push_back(*process);
 					}
 				}
@@ -97,7 +97,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		int level = 2;
 		if (options.has(L"d")) level = _wtoi(options.get(L"d").c_str());
 
-		for (std::list<const process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
+		for (std::list<process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
 			std::tcout << std::endl;
 			std::tcout << "Process: " << process->image_filename() << std::endl;
 			std::tcout << "PID:     " << process->process_id() << std::endl;
@@ -176,7 +176,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				std::tcout << std::endl;
 
 				if (level >= 4) {
-					for (std::list<const process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
+					for (std::list<process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
 						const process_memory_block& block = *it_block;
 						std::tcout << "  " << std::setw(16) << std::setfill(L'0') << std::right << std::hex << block.base();
 						std::tcout << "  " << std::setw(11) << std::setfill(L' ') << std::left  << format_process_memory_block_type(block.type());
@@ -201,8 +201,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << "Process: <comparison>" << std::endl;
 		std::tcout << "PID:     <comparison>" << std::endl;
 
-		std::map<std::tstring, std::list<const process_memory>, tstring_caseless_compare_t> memories;
-		for (std::list<const process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
+		std::map<std::tstring, std::list<process_memory>, tstring_caseless_compare_t> memories;
+		for (std::list<process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
 			memories[process->image_filename()].push_back(process_memory(*process));
 		}
 
@@ -211,13 +211,13 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << std::left << std::setw(33) << "Process" << "  " << std::right << std::setw(12) << "Private" << "  " << std::setw(12) << "Shared" << "  " << std::setw(12) << "Total" << "  " << std::setw(12) << "Private" << "  " << std::setw(12) << "Mapped" << std::endl;
 		std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
 
-		for (std::map<std::tstring, std::list<const process_memory>, tstring_caseless_compare_t>::const_iterator pms = memories.begin(); pms != memories.end(); pms++) {
+		for (std::map<std::tstring, std::list<process_memory>, tstring_caseless_compare_t>::const_iterator pms = memories.begin(); pms != memories.end(); pms++) {
 			unsigned long long ws_private = 0;
 			unsigned long long ws_shared = 0;
 			unsigned long long vm_private = 0;
 			unsigned long long vm_mapped = 0;
 
-			for (std::list<const process_memory>::const_iterator pm = pms->second.begin(); pm != pms->second.end(); pm++) {
+			for (std::list<process_memory>::const_iterator pm = pms->second.begin(); pm != pms->second.end(); pm++) {
 				ws_private += pm->data(PMGT_TOTAL, PMDT_WS_TOTAL) - pm->data(PMGT_TOTAL, PMDT_WS_SHARED);
 				ws_shared += pm->data(PMGT_TOTAL, PMDT_WS_SHARED);
 				vm_private += pm->data(PMGT_PRIVATE, PMDT_COMMITTED) + pm->data(PMGT_HEAP, PMDT_COMMITTED) + pm->data(PMGT_STACK, PMDT_COMMITTED);
@@ -233,14 +233,14 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << "Process: <summary>" << std::endl;
 		std::tcout << "PID:     <summary>" << std::endl;
 
-		std::list<const process_memory> memories;
-		for (std::list<const process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
+		std::list<process_memory> memories;
+		for (std::list<process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
 			memories.push_back(process_memory(*process));
 		}
 
 		unsigned long long vm_total = 0;
 		unsigned long long ws_total = 0;
-		for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
+		for (std::list<process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
 			vm_total += memory->data(PMGT_TOTAL, PMDT_COMMITTED);
 			ws_total += memory->data(PMGT_TOTAL, PMDT_WS_TOTAL);
 		}
@@ -251,7 +251,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tstring ws_summary;
 		if (vm_total > 0) {
 			for (process_memory_group_type group_type = PMGT_IMAGE; group_type < PMGT_FREE; group_type = (process_memory_group_type)((int)group_type + 1)) {
-				for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
+				for (std::list<process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
 					vm_current += memory->data(group_type, PMDT_COMMITTED);
 					ws_current += memory->data(group_type, PMDT_WS_TOTAL);
 				}
@@ -285,7 +285,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			std::tcout << std::setw(11) << std::setfill(L' ') << std::left << format_process_memory_group_type(group_type);
 			for (process_memory_data_type type = PMDT_SIZE; type < PMDT__LAST; type = (process_memory_data_type)((int)type + 1)) {
 				unsigned long long sum = 0;
-				for (std::list<const process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
+				for (std::list<process_memory>::const_iterator memory = memories.begin(); memory != memories.end(); memory++) {
 					sum += memory->data(group_type, type);
 				}
 				std::tcout << "  " << std::setw(type == PMDT_BLOCKS ? 6 : 12) << std::setfill(L' ') << std::right << (type == PMDT_BLOCKS ? format_number(sum) : format_size(sum));

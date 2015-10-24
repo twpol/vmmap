@@ -7,7 +7,7 @@
 #include "process_memory.h"
 
 // Output formatting for sizes ("#,##0 K").
-std::tstring format_size(unsigned long long size)
+const std::tstring format_size(const unsigned long long size)
 {
 	if (size == 0) {
 		return _T("");
@@ -21,7 +21,7 @@ std::tstring format_size(unsigned long long size)
 }
 
 // Output formatting for numbers ("#,##0").
-std::tstring format_number(unsigned long long size)
+const std::tstring format_number(const unsigned long long size)
 {
 	if (size == 0) {
 		return _T("");
@@ -34,7 +34,7 @@ std::tstring format_number(unsigned long long size)
 }
 
 // Output labels for memory data types.
-std::tstring format_process_memory_data_type(int type)
+const std::tstring format_process_memory_data_type(const int type)
 {
 	if (type == PMDT_BASE)         return _T("Address");
 	if (type == PMDT_SIZE)         return _T("Size");
@@ -48,7 +48,7 @@ std::tstring format_process_memory_data_type(int type)
 }
 
 // Output labels for memory block types.
-std::tstring format_process_memory_block_type(int type)
+const std::tstring format_process_memory_block_type(const int type)
 {
 	if (type == PMBT_FREE)      return _T("Free");
 	if (type == PMBT_RESERVED)  return _T("Reserved");
@@ -57,7 +57,7 @@ std::tstring format_process_memory_block_type(int type)
 }
 
 // Output labels for memory group types.
-std::tstring format_process_memory_group_type(int type)
+const std::tstring format_process_memory_group_type(const int type)
 {
 	if (type == PMGT_TOTAL)       return _T("Total");
 	if (type == PMGT_IMAGE)       return _T("Image");

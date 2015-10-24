@@ -165,7 +165,7 @@ process_memory::process_memory(const process& process) : _process(process)
 						std::map<unsigned long long, process_memory_group>::const_iterator it_group = _groups.upper_bound(target_address);
 						if (it_group-- != _groups.end()) {
 							const process_memory_group& group = (*it_group).second;
-							for (std::list<const process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
+							for (std::list<process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
 								if (((*it_block).base() <= target_address) && ((*it_block).base() + (*it_block).size() >= target_address)) {
 									process_memory_block& block = const_cast<process_memory_block&>(*it_block);
 									block.add_ws_page(ws_block, performance_info.PageSize);
@@ -241,7 +241,7 @@ void process_memory::disable_privilege(const std::tstring privilege_name)
 	}
 }
 
-unsigned long long process_memory::data(process_memory_group_type group_type, process_memory_data_type type) const
+const unsigned long long process_memory::data(const process_memory_group_type group_type, const process_memory_data_type type) const
 {
 	if ((group_type == PMGT_TOTAL) && (type == PMDT_BLOCKS)) return 0;
 
@@ -291,7 +291,7 @@ process_memory_group::process_memory_group(const process_memory& memory, const H
 
 		if ((_type == PMGT_SHAREABLE) || (_type == PMGT_PRIVATE)) {
 			// Shareable and private memory may be a process heap.
-			for (std::list<const process_heap>::const_iterator heap = memory.heaps().begin(); heap != memory.heaps().end(); heap++) {
+			for (std::list<process_heap>::const_iterator heap = memory.heaps().begin(); heap != memory.heaps().end(); heap++) {
 				if (((unsigned long long)info->BaseAddress <= heap->base()) && ((unsigned long long)info->BaseAddress + (unsigned long long)info->RegionSize >= heap->base())) {
 					std::tstring heap_details(_T("Heap ID:           "));
 					_itow_s(heap->id(), &heap_details[9], 10, 10);
@@ -312,23 +312,23 @@ process_memory_group::~process_memory_group(void)
 {
 }
 
-unsigned long long process_memory_group::data(process_memory_data_type type) const
+const unsigned long long process_memory_group::data(const process_memory_data_type type) const
 {
 	if ((type == PMDT_BASE) && _blocks.size()) return _blocks.begin()->base();
 	if (type == PMDT_BASE) return 0;
 	if (type == PMDT_BLOCKS) return _blocks.size();
 
 	unsigned long long total = 0;
-	for (std::list<const process_memory_block>::const_iterator block = _blocks.begin(); block != _blocks.end(); block++) {
+	for (std::list<process_memory_block>::const_iterator block = _blocks.begin(); block != _blocks.end(); block++) {
 		total += (*block).data(type);
 	}
 	return total;
 }
 
-process_memory_protection process_memory_group::protection(void) const
+const process_memory_protection process_memory_group::protection(void) const
 {
 	process_memory_protection rv = PMP_NONE;
-	for (std::list<const process_memory_block>::const_iterator block = _blocks.begin(); block != _blocks.end(); block++) {
+	for (std::list<process_memory_block>::const_iterator block = _blocks.begin(); block != _blocks.end(); block++) {
 		if ((*block).type() == PMBT_COMMITTED) {
 			rv |= (*block).protection();
 		}
@@ -336,7 +336,7 @@ process_memory_protection process_memory_group::protection(void) const
 	return rv;
 }
 
-std::tstring process_memory_group::protection_str(void) const
+const std::tstring process_memory_group::protection_str(void) const
 {
 	process_memory_protection p = protection();
 	std::tstring rv;
@@ -350,7 +350,7 @@ std::tstring process_memory_group::protection_str(void) const
 	return rv;
 }
 
-void process_memory_group::add_block(const process_memory_block& block)
+const void process_memory_group::add_block(const process_memory_block& block)
 {
 	_blocks.push_back(block);
 }
@@ -395,7 +395,7 @@ process_memory_block::process_memory_block(const process_memory& memory, const H
 
 	if ((_type != PMBT_FREE) && (group.type() == PMGT_PRIVATE)) {
 		// Private memory may be a stack.
-		for (std::list<const process_stack>::const_iterator stack = memory.stacks().begin(); stack != memory.stacks().end(); stack++) {
+		for (std::list<process_stack>::const_iterator stack = memory.stacks().begin(); stack != memory.stacks().end(); stack++) {
 			if (((unsigned long long)info->BaseAddress <= stack->base()) && ((unsigned long long)info->BaseAddress + (unsigned long long)info->RegionSize >= stack->base())) {
 				std::tstring stack_details(_T("Thread ID:           "));
 				_itow_s(stack->id(), &stack_details[11], 10, 10);
@@ -417,14 +417,14 @@ process_memory_block::~process_memory_block(void)
 {
 }
 
-unsigned long long process_memory_block::data(process_memory_data_type type) const
+const unsigned long long process_memory_block::data(const process_memory_data_type type) const
 {
 	if (type == PMDT_COMMITTED) return (_type == PMBT_COMMITTED ? _data[PMDT_SIZE] : 0);
 	if (type == PMDT_WS_TOTAL) return _data[PMDT_WS_PRIVATE] + _data[PMDT_WS_SHAREABLE];
 	return _data[type];
 }
 
-std::tstring process_memory_block::protection_str(void) const
+const std::tstring process_memory_block::protection_str(void) const
 {
 	if (_type == PMBT_COMMITTED) {
 		process_memory_protection p = protection();
@@ -441,7 +441,7 @@ std::tstring process_memory_block::protection_str(void) const
 	return _T("");
 }
 
-void process_memory_block::add_ws_page(PSAPI_WORKING_SET_BLOCK* ws_block, unsigned long page_size)
+const void process_memory_block::add_ws_page(const PSAPI_WORKING_SET_BLOCK* ws_block, const unsigned long page_size)
 {
 	if (ws_block->Shared) {
 		_data[PMDT_WS_SHAREABLE] += page_size;

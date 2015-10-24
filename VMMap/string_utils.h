@@ -17,8 +17,8 @@ struct tstring_caseless_compare_t
 	}
 };
 
-std::tstring format_size(unsigned long long size);
-std::tstring format_number(unsigned long long number);
-std::tstring format_process_memory_data_type(int type);
-std::tstring format_process_memory_block_type(int type);
-std::tstring format_process_memory_group_type(int type);
+const std::tstring format_size(const unsigned long long size);
+const std::tstring format_number(const unsigned long long number);
+const std::tstring format_process_memory_data_type(const int type);
+const std::tstring format_process_memory_block_type(const int type);
+const std::tstring format_process_memory_group_type(const int type);

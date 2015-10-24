@@ -8,8 +8,8 @@
 class commandline_options
 {
 private:
-	std::map<const std::tstring, std::list<const std::tstring> > _arguments;
-	std::list<const std::tstring> _files;
+	std::map<std::tstring, std::list<std::tstring> > _arguments;
+	std::list<std::tstring> _files;
 public:
 	static const std::tstring nopt;
 	// Creates a new commandline_options from the process' command line and
@@ -22,11 +22,11 @@ public:
 	commandline_options(const std::tstring);
 	~commandline_options(void) {}
 	// Checks whether a specific option was specified.
-	const bool has(const std::tstring);
+	const bool has(const std::tstring) const;
 	// Returns the value of a specified option.
-	const std::tstring& get(const std::tstring);
+	const std::tstring& get(const std::tstring) const;
 	// Returns a list of values for a multiply-specified option.
-	const std::list<const std::tstring>& gets(const std::tstring);
+	const std::list<std::tstring>& gets(const std::tstring) const;
 	// Returns a list of non-argument values.
-	const std::list<const std::tstring>& files(void) const { return _files; }
+	const std::list<std::tstring>& files(void) const { return _files; }
 };

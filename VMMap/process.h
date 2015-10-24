@@ -20,12 +20,12 @@ public:
 	process(void);
 	// Create a process wrapper for a given PID. The process' creation time,
 	// image file path and file name and owning username are all collected.
-	process(DWORD pid);
+	process(const DWORD pid);
 	~process(void);
-	DWORD process_id(void) const { return _process_id; }
-	FILETIME creation_time(void) const { return _creation_time; }
-	std::tstring image_filepath(void) const { return _image_filepath; }
-	std::tstring image_filename(void) const { return _image_filename; }
-	std::tstring username(void) const { return _username; }
+	const DWORD process_id(void) const { return _process_id; }
+	const FILETIME creation_time(void) const { return _creation_time; }
+	const std::tstring image_filepath(void) const { return _image_filepath; }
+	const std::tstring image_filename(void) const { return _image_filename; }
+	const std::tstring username(void) const { return _username; }
 	operator DWORD(void) const { return _process_id; }
 };
