@@ -27,12 +27,13 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << "   pid        Process identifier." << std::endl;
 		std::tcout << "  /IM         Report on a specific process. Can be specified multiple times." << std::endl;
 		std::tcout << "   image      Process name or '*' for all accessible processes." << std::endl;
-		std::tcout << "  /D          Specifies a level of detail to report (defaults to 2)." << std::endl;
-		std::tcout << "   level      0  Just application name and PID." << std::endl;
-		std::tcout << "              1  Adds VM and WS summary graphs." << std::endl;
-		std::tcout << "              2  Adds summary table with type breakdown." << std::endl;
-		std::tcout << "              3  Adds table of each virtual memory allocation block." << std::endl;
-		std::tcout << "              4  Adds details on sub-block allocation statess." << std::endl;
+		std::tcout << "  /D          Specifies a level of detail for matching processes (defaults to 3)." << std::endl;
+		std::tcout << "   level      0  Nothing." << std::endl;
+		std::tcout << "              1  Just application name and PID." << std::endl;
+		std::tcout << "              2  Adds VM and WS summary graphs." << std::endl;
+		std::tcout << "              3  Adds summary table with type breakdown." << std::endl;
+		std::tcout << "              4  Adds table of each virtual memory allocation block." << std::endl;
+		std::tcout << "              5  Adds details on sub-block allocation statess." << std::endl;
 		std::tcout << "  /FREE       Include free memory ranges." << std::endl;
 		std::tcout << "  /COMPARE    Include a comparison, by process name, of all selected processes." << std::endl;
 		std::tcout << "  /SUM        Include a summary (detail level 2) of all selected processes." << std::endl;
@@ -94,15 +95,17 @@ int _tmain(int argc, _TCHAR* argv[])
 #define SUMMARY_ROW_SIZE (100)
 #define SUMMARY_SIZE (2 * SUMMARY_ROW_SIZE)
 	{
-		int level = 2;
+		int level = 3;
 		if (options.has(L"d")) level = _wtoi(options.get(L"d").c_str());
 
 		for (std::list<process>::const_iterator process = processes.begin(); process != processes.end(); process++) {
+			if (level < 1) continue;
+
 			std::tcout << std::endl;
 			std::tcout << "Process: " << process->image_filename() << std::endl;
 			std::tcout << "PID:     " << process->process_id() << std::endl;
 
-			if (level < 1) continue;
+			if (level < 2) continue;
 
 			process_memory memory(*process);
 
@@ -137,7 +140,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				std::tcout << ws_summary.substr(i, SUMMARY_ROW_SIZE) << std::endl;
 			}
 
-			if (level < 2) continue;
+			if (level < 3) continue;
 
 			std::tcout << std::endl;
 			std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << std::endl;
@@ -151,7 +154,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				std::tcout << std::endl;
 			}
 
-			if (level < 3) continue;
+			if (level < 4) continue;
 
 			std::tcout << std::endl;
 			std::tcout << std::left << std::setw(16) << "Address" << "    " << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << "  " << std::left << std::setw(7) << "Access" << "  " << "Details" << std::endl;
@@ -175,7 +178,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				std::tcout << "  "                  << std::setfill(L' ') << std::left  << group.details();
 				std::tcout << std::endl;
 
-				if (level >= 4) {
+				if (level >= 5) {
 					for (std::list<process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
 						const process_memory_block& block = *it_block;
 						std::tcout << "  " << std::setw(16) << std::setfill(L'0') << std::right << std::hex << block.base();
