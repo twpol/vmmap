@@ -119,10 +119,18 @@ process_memory::process_memory(const process& process) : _process(process)
 
 	// Collect virtual memory allocations...
 	{
+		BOOL isWow64;
+		IsWow64Process(hProcess, &isWow64);
+
+		SYSTEM_INFO systemInfo;
+		GetNativeSystemInfo(&systemInfo);
+
 		// Windows 32bit limit: 0xFFFFFFFF.
-		// windows 64bit limit: 0x7FFFFFFFFFF.
+		// Windows 64bit limit: 0x7FFFFFFFFFF.
+		unsigned long long maxAddress = systemInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 && !isWow64 ? 0x80000000000 : 0x100000000;
+
 		MEMORY_BASIC_INFORMATION info = { 0 };
-		for (unsigned long long address = 0; address < 0x80000000000; address += info.RegionSize) {
+		for (unsigned long long address = 0; address < maxAddress; address += info.RegionSize) {
 			size_t info_size = VirtualQueryEx(hProcess, (void*)address, &info, sizeof(info));
 			if (info_size == 0) break;
 			if (info_size != sizeof(info)) {
@@ -131,6 +139,18 @@ process_memory::process_memory(const process& process) : _process(process)
 			if (info.BaseAddress != (void*)address) {
 				std::tcerr << std::dec << _process.process_id() << "VirtualQueryEx returned unexpected BaseAddress (" << std::hex << info.BaseAddress << ", expected " << std::hex << (void*)address << ")" << std::endl;
 			}
+
+			// Account for unusable regions of memory. Unusable pages are reported as MEM_FREE by VirtualQueryEx.
+			if (info.State == MEM_FREE && systemInfo.dwAllocationGranularity > systemInfo.dwPageSize) {
+				unsigned long long unusable_end = ((address + systemInfo.dwAllocationGranularity - 1) / systemInfo.dwAllocationGranularity) * systemInfo.dwAllocationGranularity;
+				if (unusable_end > address) {
+					_groups[address] = process_memory_group(PMGT_UNUSABLE, address, unusable_end - address);
+					address = unusable_end - info.RegionSize;
+					continue;
+				}
+			}
+
+			if ((unsigned long long)info.AllocationBase + info.RegionSize > maxAddress) break;
 
 			unsigned long long allocation_base = (unsigned long long)info.AllocationBase;
 			if (info.State == MEM_FREE) allocation_base = (unsigned long long)info.BaseAddress;
@@ -164,9 +184,9 @@ process_memory::process_memory(const process& process) : _process(process)
 						unsigned long long target_address = ws_block->VirtualPage * performance_info.PageSize;
 						std::map<unsigned long long, process_memory_group>::const_iterator it_group = _groups.upper_bound(target_address);
 						if (it_group-- != _groups.end()) {
-							const process_memory_group& group = (*it_group).second;
+							const process_memory_group& group = it_group->second;
 							for (std::list<process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
-								if (((*it_block).base() <= target_address) && ((*it_block).base() + (*it_block).size() >= target_address)) {
+								if ((it_block->base() <= target_address) && (it_block->base() + it_block->size() >= target_address)) {
 									process_memory_block& block = const_cast<process_memory_block&>(*it_block);
 									block.add_ws_page(ws_block, performance_info.PageSize);
 									break;
@@ -243,7 +263,18 @@ void process_memory::disable_privilege(const std::tstring privilege_name)
 
 const unsigned long long process_memory::data(const process_memory_group_type group_type, const process_memory_data_type type) const
 {
-	if ((group_type == PMGT_TOTAL) && (type == PMDT_BLOCKS)) return 0;
+	if ((group_type == PMGT_TOTAL) && (type == PMDT_LARGEST)) return 0;
+	if (type == PMDT_LARGEST) {
+		unsigned long long largest = 0;
+		for (std::map<unsigned long long, process_memory_group>::const_iterator group = _groups.begin(); group != _groups.end(); group++) {
+			if ((group->second.type() == group_type) || ((group_type == PMGT_TOTAL) && (group->second.type() != PMGT_FREE))) {
+				if (largest < group->second.data(type)) {
+					largest = group->second.data(type);
+				}
+			}
+		}
+		return largest;
+	}
 
 	unsigned long long total = 0;
 	for (std::map<unsigned long long, process_memory_group>::const_iterator group = _groups.begin(); group != _groups.end(); group++) {
@@ -308,6 +339,12 @@ process_memory_group::process_memory_group(const process_memory& memory, const H
 	}
 }
 
+process_memory_group::process_memory_group(const process_memory_group_type type, const unsigned long long base, const unsigned long long size)
+{
+	_type = type;
+	_blocks.push_back(process_memory_block(PMBT_FREE, base, size));
+}
+
 process_memory_group::~process_memory_group(void)
 {
 }
@@ -316,11 +353,13 @@ const unsigned long long process_memory_group::data(const process_memory_data_ty
 {
 	if ((type == PMDT_BASE) && _blocks.size()) return _blocks.begin()->base();
 	if (type == PMDT_BASE) return 0;
+	if ((type == PMDT_BLOCKS) && (this->type() == PMGT_UNUSABLE)) return 0;
 	if (type == PMDT_BLOCKS) return _blocks.size();
+	if (type == PMDT_LARGEST) return data(PMDT_SIZE);
 
 	unsigned long long total = 0;
 	for (std::list<process_memory_block>::const_iterator block = _blocks.begin(); block != _blocks.end(); block++) {
-		total += (*block).data(type);
+		total += block->data(type);
 	}
 	return total;
 }
@@ -329,8 +368,8 @@ const process_memory_protection process_memory_group::protection(void) const
 {
 	process_memory_protection rv = PMP_NONE;
 	for (std::list<process_memory_block>::const_iterator block = _blocks.begin(); block != _blocks.end(); block++) {
-		if ((*block).type() == PMBT_COMMITTED) {
-			rv |= (*block).protection();
+		if (block->type() == PMBT_COMMITTED) {
+			rv |= block->protection();
 		}
 	}
 	return rv;
@@ -362,6 +401,7 @@ process_memory_block::process_memory_block(const process_memory& memory, const H
 	for (int i = PMDT__FIRST; i < PMDT__LAST; i++) _data[i] = 0;
 	_data[PMDT_BASE] = (unsigned long long)info->BaseAddress;
 	_data[PMDT_SIZE] = (unsigned long long)info->RegionSize;
+	_data[PMDT_LARGEST] = (unsigned long long)info->RegionSize;
 	_type = info->State == MEM_COMMIT ? PMBT_COMMITTED : info->State == MEM_RESERVE ? PMBT_RESERVED : PMBT_FREE;
 	switch (info->Protect & 0x00FF) {
 		case PAGE_NOACCESS:
@@ -411,6 +451,15 @@ process_memory_block::process_memory_block(const process_memory& memory, const H
 			}
 		}
 	}
+}
+
+process_memory_block::process_memory_block(const process_memory_block_type type, const unsigned long long base, const unsigned long long size)
+{
+	_type = type;
+	for (int i = PMDT__FIRST; i < PMDT__LAST; i++) _data[i] = 0;
+	_data[PMDT_BASE] = base;
+	_data[PMDT_SIZE] = size;
+	_data[PMDT_LARGEST] = size;
 }
 
 process_memory_block::~process_memory_block(void)

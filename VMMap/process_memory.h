@@ -32,6 +32,7 @@ enum process_memory_data_type
 	PMDT_WS_SHAREABLE,
 	PMDT_WS_SHARED,
 	PMDT_BLOCKS,
+	PMDT_LARGEST,
 	PMDT__LAST
 };
 
@@ -57,6 +58,7 @@ private:
 	std::tstring _details;
 public:
 	process_memory_block(const process_memory& memory, const HANDLE hProcess, process_memory_group& group, const PMEMORY_BASIC_INFORMATION info);
+	process_memory_block(const process_memory_block_type type, const unsigned long long base, const unsigned long long size);
 	~process_memory_block(void);
 
 	const unsigned long long data(const process_memory_data_type type) const;
@@ -69,6 +71,7 @@ public:
 	DATA_ACCESS_PMB(ws_shareable, WS_SHAREABLE);
 	DATA_ACCESS_PMB(ws_shared, WS_SHARED);
 	DATA_ACCESS_PMB(blocks, BLOCKS);
+	DATA_ACCESS_PMB(largest, LARGEST);
 
 	const process_memory_block_type type(void) const { return _type; }
 	const process_memory_protection protection(void) const { return _protection; }
@@ -85,11 +88,12 @@ enum process_memory_group_type
 	PMGT__FIRST = 0,
 	PMGT_TOTAL = PMGT__FIRST,
 	PMGT_IMAGE,
-	PMGT_PRIVATE,
-	PMGT_SHAREABLE,
 	PMGT_MAPPED_FILE,
+	PMGT_SHAREABLE,
 	PMGT_HEAP,
 	PMGT_STACK,
+	PMGT_PRIVATE,
+	PMGT_UNUSABLE,
 	PMGT_FREE,
 	PMGT__LAST
 };
@@ -103,6 +107,7 @@ private:
 public:
 	process_memory_group(void);
 	process_memory_group(const process_memory& memory, const HANDLE hProcess, const PMEMORY_BASIC_INFORMATION info);
+	process_memory_group(const process_memory_group_type type, const unsigned long long base, const unsigned long long size);
 	~process_memory_group(void);
 
 	const unsigned long long data(const process_memory_data_type type) const;
@@ -115,6 +120,7 @@ public:
 	DATA_ACCESS_PMG(ws_shareable, WS_SHAREABLE);
 	DATA_ACCESS_PMG(ws_shared, WS_SHARED);
 	DATA_ACCESS_PMG(blocks, BLOCKS);
+	DATA_ACCESS_PMG(largest, LARGEST);
 
 	const process_memory_group_type type(void) const { return _type; }
 	const void type(const process_memory_group_type type) { _type = type; }
@@ -144,6 +150,8 @@ public:
 	// collection happens immediately.
 	process_memory(const process& process);
 	~process_memory(void);
+	// Returns the process.
+	const DWORD process_id(void) const { return _process.process_id(); }
 	// Returns a list of modules (mapped code) found.
 	const std::list<process_module>& modules(void) const { return _modules; }
 	// Returns a list of heaps (private memory) found.

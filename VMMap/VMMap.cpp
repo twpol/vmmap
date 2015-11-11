@@ -34,7 +34,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << "              3  Adds summary table with type breakdown." << std::endl;
 		std::tcout << "              4  Adds table of each virtual memory allocation block." << std::endl;
 		std::tcout << "              5  Adds details on sub-block allocation statess." << std::endl;
-		std::tcout << "  /FREE       Include free memory ranges." << std::endl;
+		std::tcout << "  /FREE       Include free and unusable memory ranges." << std::endl;
 		std::tcout << "  /COMPARE    Include a comparison, by process name, of all selected processes." << std::endl;
 		std::tcout << "  /SUM        Include a summary (detail level 2) of all selected processes." << std::endl;
 		std::tcout << std::endl;
@@ -143,8 +143,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			if (level < 3) continue;
 
 			std::tcout << std::endl;
-			std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << std::endl;
-			std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
+			std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << "  " << std::setw(12) << "Largest" << std::endl;
+			std::tcout << std::setw(13 + 14 * 7 + 8 - 2) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
 
 			for (process_memory_group_type group_type = PMGT__FIRST; group_type < PMGT__LAST; group_type = (process_memory_group_type)((int)group_type + 1)) {
 				std::tcout << std::setw(11) << std::setfill(L' ') << std::left << format_process_memory_group_type(group_type);
@@ -158,11 +158,11 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			std::tcout << std::endl;
 			std::tcout << std::left << std::setw(16) << "Address" << "    " << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << "  " << std::left << std::setw(7) << "Access" << "  " << "Details" << std::endl;
-			std::tcout << std::setw(134+64) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
+			std::tcout << std::setw(20 + 13 + 14 * 6 + 8 + 9 * 2 - 2) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
 
 			for (std::map<unsigned long long, process_memory_group>::const_iterator it_group = memory.groups().begin(); it_group != memory.groups().end(); it_group++) {
 				const process_memory_group& group = (*it_group).second;
-				if ((group.type() == PMGT_FREE) && !options.has(L"free")) continue;
+				if ((group.type() == PMGT_FREE || group.type() == PMGT_UNUSABLE) && !options.has(L"free")) continue;
 
 				std::tcout         << std::setw(16) << std::setfill(L'0') << std::right << std::hex << group.base();
 				std::tcout << "  ";
@@ -178,7 +178,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				std::tcout << "  "                  << std::setfill(L' ') << std::left  << group.details();
 				std::tcout << std::endl;
 
-				if (level >= 5) {
+				if (level >= 5 && group.type() != PMGT_FREE && group.type() != PMGT_UNUSABLE) {
 					for (std::list<process_memory_block>::const_iterator it_block = group.block_list().begin(); it_block != group.block_list().end(); it_block++) {
 						const process_memory_block& block = *it_block;
 						std::tcout << "  " << std::setw(16) << std::setfill(L'0') << std::right << std::hex << block.base();
