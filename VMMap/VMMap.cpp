@@ -281,8 +281,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 
 		std::tcout << std::endl;
-		std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << std::endl;
-		std::tcout << std::setw(103) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
+		std::tcout << std::left << std::setw(11) << "Type" << "  " << std::right << std::setw(12) << "Size" << "  " << std::setw(12) << "Committed" << "  " << std::setw(12) << "Total WS" << "  " << std::setw(12) << "Private WS" << "  " << std::setw(12) << "Shareable WS" << "  " << std::setw(12) << "Shared WS" << "  " << std::setw(6) << "Blocks" << "  " << std::setw(12) << "Largest" << std::endl;
+		std::tcout << std::setw(13 + 14 * 7 + 8 - 2) << std::setfill(L'-') << "" << std::setfill(L' ') << std::endl;
 
 		for (process_memory_group_type group_type = PMGT__FIRST; group_type < PMGT__LAST; group_type = (process_memory_group_type)((int)group_type + 1)) {
 			std::tcout << std::setw(11) << std::setfill(L' ') << std::left << format_process_memory_group_type(group_type);
