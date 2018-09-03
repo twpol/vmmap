@@ -34,6 +34,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::tcout << "              3  Adds summary table with type breakdown." << std::endl;
 		std::tcout << "              4  Adds table of each virtual memory allocation block." << std::endl;
 		std::tcout << "              5  Adds details on sub-block allocation statess." << std::endl;
+		std::tcout << "              6  prints start address and end address of each block allocated in the heap/heaps." << std::endl;
 		std::tcout << "  /FREE       Include free and unusable memory ranges." << std::endl;
 		std::tcout << "  /COMPARE    Include a comparison, by process name, of all selected processes." << std::endl;
 		std::tcout << "  /SUM        Include a summary (detail level 2) of all selected processes." << std::endl;
@@ -109,6 +110,51 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			process_memory memory(*process);
 
+			if (level == 6) {
+				HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, (*process).process_id());
+				if (NULL == hProcess) {
+					std::tcerr << std::dec << (*process).process_id() << ": OpenProcess failed: " << std::hex << std::setw(8) << std::setfill(_T('0'))
+						<< GetLastError() << std::endl;
+					return -1;
+				}
+
+				for (std::list<process_heap>::const_iterator heap_it = memory.heaps().begin(); heap_it != memory.heaps().end(); heap_it++) {
+
+					std::tcout << "Heap ID: " << (*heap_it).id() << std::endl;
+					const std::list<std::pair<ULONG_PTR, ULONG_PTR> >& list = (*heap_it).blocks();
+
+					for (std::list<std::pair<ULONG_PTR, ULONG_PTR> >::const_iterator blocks_it = list.begin();
+						blocks_it != list.end(); blocks_it++) {
+
+						ULONG_PTR start_addr = (*blocks_it).first;
+						ULONG_PTR end_addr = (*blocks_it).second;
+						byte* buffer_base = (byte*)start_addr;
+						SIZE_T buffer_length = end_addr - start_addr < 0x1000 ? end_addr - start_addr : 0x1000;
+						byte* buffer = new byte[buffer_length];
+						ReadProcessMemory(hProcess, buffer_base, buffer, buffer_length, &buffer_length);
+						if (buffer_length > 0) {
+							std::tcout << "   BLOCK(" << std::hex << std::setfill(_T('0')) << std::setw(16) << start_addr
+								<< "-" << std::setw(16) << end_addr << ") ";
+							std::tcout << std::hex << std::setfill(_T('0'));
+							for (int i = 0; i < buffer_length / sizeof(buffer[0]); i++) {
+								if (i % 60 == 0) std::tcout << std::endl << "     " << (buffer_base + i) << ":";
+								if (i % 4 == 0) std::tcout << " ";
+								std::tcout << std::setw(2 * sizeof(buffer[0])) << buffer[i];
+							}
+							std::tcout << std::setfill(_T(' ')) << std::endl;
+						}
+						else {
+							std::tcerr << std::dec << (*process).process_id() << ": ReadProcessMemory failed: " << buffer_length
+								<< " bytes, " << std::hex << std::setw(8) << std::setfill(_T('0')) << "Last Error: " << GetLastError()
+								<< " start address: " << std::hex << std::setw(16) << std::setfill(_T('0')) << start_addr
+								<< " end address: " << std::hex << std::setw(16) << std::setfill(_T('0')) << end_addr << std::endl;
+						}
+					}
+				}
+
+			}
+
+
 			unsigned long long vm_total = memory.data(PMGT_TOTAL, PMDT_COMMITTED);
 			unsigned long long ws_total = memory.data(PMGT_TOTAL, PMDT_WS_TOTAL);
 			unsigned long long vm_current = 0;
@@ -125,6 +171,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					ws_summary += ws_temp;
 				}
 			}
+
 			vm_summary.resize(SUMMARY_SIZE, '.');
 			ws_summary.resize(SUMMARY_SIZE, '.');
 
@@ -196,6 +243,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 				}
 			}
+
 		}
 	}
 

@@ -63,8 +63,8 @@ const std::tstring format_process_memory_group_type(const int type)
 	if (type == PMGT_IMAGE)       return _T("Image");
 	if (type == PMGT_MAPPED_FILE) return _T("Mapped File");
 	if (type == PMGT_SHAREABLE)   return _T("Shareable");
-	if (type == PMGT_HEAP)        return _T("Heap");
-	if (type == PMGT_STACK)       return _T("Stack");
+	if (type == PMGT_HEAP)        return _T("heap");
+	if (type == PMGT_STACK)       return _T("stack");
 	if (type == PMGT_PRIVATE)     return _T("Private");
 	if (type == PMGT_UNUSABLE)    return _T("Unusable");
 	if (type == PMGT_FREE)        return _T("Free");
