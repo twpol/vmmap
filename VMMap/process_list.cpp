@@ -11,7 +11,7 @@ process_list::process_list(void)
 	// NT API Support:
 	//   5.0  EnumProcesses
 
-	std::vector<DWORD> pids(1024);
+	std::vector<DWORD> pids(102400);
 	DWORD pids_needed = 0;
 	if (!EnumProcesses(&*pids.begin(), pids.end() - pids.begin(), &pids_needed)) {
 		std::tcerr << "EnumProcesses failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
