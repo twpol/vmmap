@@ -197,6 +197,7 @@ process_memory::process_memory(const process& process) : _process(process)
 				} else {
 					std::tcerr << std::dec << _process.process_id() << ": QueryWorkingSet failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 				}
+				delete[] buffer;
 			} else {
 				std::tcerr << std::dec << _process.process_id() << ": GetProcessMemoryInfo failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 			}
