@@ -102,6 +102,7 @@ process_memory::process_memory(const process& process) : _process(process)
 						if (GetCurrentThreadId() != thread.th32ThreadID) {
 							ResumeThread(hThread);
 						}
+						CloseHandle(hThread);
 					} else {
 						std::tcerr << std::dec << _process.process_id() << ": OpenThread failed: " << std::hex << std::setw(8) << std::setfill(_T('0')) << GetLastError() << std::endl;
 					}
@@ -223,6 +224,7 @@ void process_memory::enable_privilege(const std::tstring privilege_name)
 	
 	LUID luid;
 	if (!LookupPrivilegeValue(NULL, privilege_name.c_str(), &luid)) {
+		CloseHandle(hToken);
 		return;
 	}
 	
@@ -231,11 +233,14 @@ void process_memory::enable_privilege(const std::tstring privilege_name)
 	tp.Privileges[0].Luid = luid;
 	tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 	if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, (PDWORD)NULL)) {
+		CloseHandle(hToken);
 		return;
 	}
 	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+		CloseHandle(hToken);
 		return;
 	}
+	CloseHandle(hToken);
 }
 
 void process_memory::disable_privilege(const std::tstring privilege_name)
@@ -247,6 +252,7 @@ void process_memory::disable_privilege(const std::tstring privilege_name)
 	
 	LUID luid;
 	if (!LookupPrivilegeValue(NULL, privilege_name.c_str(), &luid)) {
+		CloseHandle(hToken);
 		return;
 	}
 	
@@ -255,11 +261,14 @@ void process_memory::disable_privilege(const std::tstring privilege_name)
 	tp.Privileges[0].Luid = luid;
 	tp.Privileges[0].Attributes = 0;
 	if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, (PDWORD)NULL)) {
+		CloseHandle(hToken);
 		return;
 	}
 	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+		CloseHandle(hToken);
 		return;
 	}
+	CloseHandle(hToken);
 }
 
 const unsigned long long process_memory::data(const process_memory_group_type group_type, const process_memory_data_type type) const
